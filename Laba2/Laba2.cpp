@@ -16,7 +16,7 @@ int wmain(int argc, wchar_t* argv[]) {
 		Lex::LEX lex = Lex::lexAnaliz(log, in);
 		LT::showTable(lex.lextable, parm);
 		IT::showITable(lex.idtable, parm);
-		if (PolishNotation(lex.lextable, lex.idtable))
+		preabr(lex.lextable, lex.idtable);
 		ShowPN(lex.lextable, lex.idtable);
 
 		Log::Close(log);
