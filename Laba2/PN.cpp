@@ -2,19 +2,14 @@
 #include <iostream>
 #define LEX_COMMA2 '@'
 using namespace std;
-bool PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtable, int j) {
-	LT::Entry* stek = new LT::Entry;
-	/*LT::Entry null;
-	null.idxTI = 0;
-	null.lexema = 'n';
-	null.sn = 0;*/
-	LT::LexTable newlextable = LT::Create(lextable.size+1);
+bool PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable idtable, int j) {
+	LT::Entry* stek = new LT::Entry[255];
 	int idstek = 0;
 	int idlex = j;
-	unsigned char* rez;
 	bool r = false;
-	int comma = 1;
-	cout << "1\n";
+	int comma = 0;
+	int idx = 0;
+	/*cout << "1\n";*/
 	for (int i = j; i < lextable.size; i++)
 	{
 		if (lextable.table[i].sn == lextable_pos) {
@@ -24,46 +19,81 @@ bool PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtab
 				stek[idstek++] = lextable.table[i];
 			}
 			else { 
-				if (lextable.table[i].lexema == LEX_RIGHTTHESIS) {
+				if (lextable.table[i].lexema == LEX_RIGHTTHESIS || lextable.table[i].lexema ==LEX_SEMICOLON) {
 					//cout << comma << " " << idstek << " выгрузка из стека:\n";
-
+					
 					idstek--;
 					while (idstek >= 0) {
 						if (stek[idstek].lexema == LEX_LEFTTHESIS) {
-							if (comma > 1) {
-								lextable.table[idlex].idxTI = comma;
+							if (r) {
+								lextable.table[idlex].comm = comma;
 								lextable.table[idlex].lexema = LEX_COMMA2;
 								lextable.table[idlex++].sn = lextable_pos;
-								lextable.size++;
-								//cout << "lex + " << LEX_COMMA << comma << " size " << idlex << endl;
-								comma = 1;
+								if (r) lextable.table[idlex - 1].idxTI = idx;
+								//cout << "1slex + " << LEX_COMMA << comma << " size " << idlex << endl;
+								comma = 0;
+								r = false;
 							}
 							idstek--;
 							break; }
 						if (stek[idstek].lexema == LEX_COMMA) {
-							comma++;
+							
 							idstek--; continue;
 						}
 						else {
-							lextable.size++;
-							//cout << "lex + " << stek[idstek].lexema << " size " << idlex << endl;
+							//cout << "slex + " << stek[idstek].lexema << " size " << idlex << endl;
 							lextable.table[idlex++] = stek[idstek--];
 						}
 					}
-					continue;
+					if (lextable.table[i].lexema == LEX_SEMICOLON) {
+						lextable.table[idlex++] = lextable.table[i];
+						
+					}continue;
 				}
 				//cout << "lex + " << lextable.table[i].lexema << " size " << idlex << endl;
-				lextable.table[idlex++] = lextable.table[i]; 
-				lextable.size++;
+				if(r)comma++;
+				else
+				if (lextable.table[i].lexema == LEX_ID && idtable.table[lextable.table[i].idxTI].idtype == 2) {
+					r = true;
+					comma = 0;
+					idx = lextable.table[i].idxTI;
+				}
+				else lextable.table[idlex++] = lextable.table[i];
 			}
 		}
 		else {
-			if (lextable.table[i].sn - 1 == lextable_pos) {
+			idstek--;
+			while (idstek >= 0) {
+				if (stek[idstek].lexema == LEX_LEFTTHESIS) {
+					if (comma > 1 || r) {
+						if (comma >= 1) comma++;
+						lextable.table[idlex].comm = comma;
+						lextable.table[idlex].lexema = LEX_COMMA2;
+						lextable.table[idlex++].sn = lextable_pos;
+						if (r) lextable.table[idlex - 1].idxTI = idx;
+						//cout << "1slex + " << LEX_COMMA << comma << " size " << idlex << endl;
+						comma = 0;
+						r = false;
+					}
+					idstek--;
+					break;
+				}
+				if (stek[idstek].lexema == LEX_COMMA) {
+
+					idstek--; continue;
+				}
+				else {
+					//cout << "slex + " << stek[idstek].lexema << " size " << idlex << endl;
+					lextable.table[idlex++] = stek[idstek--];
+				}
+			}
+			if (lextable.table[i].lexema == LEX_SEMICOLON) lextable.table[idlex++] = lextable.table[i];
+
 				while (lextable.table[idlex].sn == lextable_pos)
 				{
 					lextable.table[idlex++].lexema = NULL;
 					lextable.table[idlex - 1].sn = lextable_pos;
-					lextable.size++;
+
 					//cout << "lex + " << NULL << " size" << idlex << endl;
 
 				}
@@ -77,15 +107,13 @@ bool PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtab
 				idstek = 0;
 				//cout << lextable_pos << endl;
 				return true;
-			}
 		}
 	}
-	delete(stek);
 	//lextable = newlextable;
 
 	return true;
 }
-void preabr(LT::LexTable& lextable, IT::IdTable& idtable) {
+void preabr(LT::LexTable& lextable, IT::IdTable idtable) {
 	int lextable_pos = 0;
 	for (int i = 0; i < lextable.size; i++) {
 		if (lextable.table[i].sn > lextable_pos) {
@@ -97,7 +125,7 @@ void preabr(LT::LexTable& lextable, IT::IdTable& idtable) {
 void ShowPN(LT::LexTable& lextable, IT::IdTable& idtable) {
 	int sni=1;
 	cout << "01.";
-	for (int i = 0; i < lextable.size; i++)
+	for (int i = 0; i < lextable.size-1; i++)
 	{
 		if (lextable.table[i].sn > sni) {
 			cout << endl;
@@ -110,7 +138,7 @@ void ShowPN(LT::LexTable& lextable, IT::IdTable& idtable) {
 			continue;
 		}
 		if (lextable.table[i].lexema == LEX_COMMA2) {
-			cout << "@" << lextable.table[i].idxTI;
+			cout << "@" << lextable.table[i].comm;
 		}
 		else
 		cout << lextable.table[i].lexema;
