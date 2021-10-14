@@ -52,7 +52,6 @@ bool PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable idtabl
 				}
 				//cout << "lex + " << lextable.table[i].lexema << " size " << idlex << endl;
 				if(r)comma++;
-				else
 				if (lextable.table[i].lexema == LEX_ID && idtable.table[lextable.table[i].idxTI].idtype == 2) {
 					r = true;
 					comma = 0;
